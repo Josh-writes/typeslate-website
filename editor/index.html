@@ -131,8 +131,22 @@ const loading = document.getElementById('loading');
 function applyHighlights(text, highlights) {
   let result = "";
   let last = 0;
-  highlights.sort((a, b) => a.start - b.start);
+
+  // Sort by start, then end
+  highlights.sort((a, b) => a.start - b.start || a.end - b.end);
+
+  // Remove overlapping highlights
+  const nonOverlapping = [];
+  let prevEnd = -1;
   for (const h of highlights) {
+    if (h.start >= prevEnd) {
+      nonOverlapping.push(h);
+      prevEnd = h.end;
+    }
+  }
+
+  // Apply highlights cleanly
+  for (const h of nonOverlapping) {
     if (last < h.start) {
       result += text.slice(last, h.start);
     }
@@ -142,8 +156,10 @@ function applyHighlights(text, highlights) {
   if (last < text.length) {
     result += text.slice(last);
   }
+
   return result;
 }
+
 
 function buildReport(highlights) {
   if (!highlights.length) return "<em>No issues detected 🎉</em>";
