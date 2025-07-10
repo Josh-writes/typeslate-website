@@ -50,7 +50,14 @@
 <header class="bg-white shadow-md">
   <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
     <a href="/" class="text-2xl font-bold text-black no-underline">TypeSlate</a>
-    <nav class="hidden md:flex space-x-6 text-base">
+    <button id="menu-btn" class="text-gray-800 focus:outline-none md:hidden">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+	
+	<nav class="hidden md:flex space-x-6 text-base">
       <a href="/" class="hover:underline">Home</a>
       <a href="/blog/" class="hover:underline">Blog</a>
       <span class="font-semibold text-black">Editor</span>
@@ -81,7 +88,8 @@
         <option value="general">General</option>
         <option value="fiction">Fiction</option>
         <option value="professional">Professional</option>
-      </select>
+        <option value="copywriting">Copywriting</option>
+	  </select>
     </div>
     <button type="submit" class="bg-black text-white px-6 py-2 rounded font-semibold hover:bg-gray-800">Highlight My Text</button>
   </form>
@@ -236,6 +244,17 @@ form.onsubmit = async function (e) {
   <!-- Privacy -->
   <a href="/privacy.html" class="underline hover:text-gray-700 block mt-4">Privacy Policy</a>
 </footer>
+
+<script>
+  const btn = document.getElementById("menu-btn");
+  const mobileMenu = document.getElementById("mobile-menu");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      mobileMenu.classList.toggle("hidden");
+    });
+  }
+</script>
+
 
 </body>
 </html>
