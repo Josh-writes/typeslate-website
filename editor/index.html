@@ -105,46 +105,102 @@ const resultBox = document.getElementById('result');
 const errorBox = document.getElementById('error');
 const downloadLink = document.getElementById('downloadLink');
 
+// Add new preview + report boxes
+const previewBox = document.createElement("div");
+previewBox.id = "previewBox";
+previewBox.className = "whitespace-pre-wrap bg-yellow-50 border rounded p-4 font-mono mt-6 hidden";
+form.parentElement.appendChild(previewBox);
+
+const reportBox = document.createElement("div");
+reportBox.id = "reportBox";
+reportBox.className = "text-sm text-gray-700 mt-4 hidden";
+form.parentElement.appendChild(reportBox);
+
+// Utilities
+function applyHighlights(text, highlights) {
+  let result = "";
+  let last = 0;
+  highlights.sort((a, b) => a.start - b.start);
+  for (const h of highlights) {
+    if (last < h.start) {
+      result += text.slice(last, h.start);
+    }
+    result += `<mark>${text.slice(h.start, h.end)}</mark>`;
+    last = h.end;
+  }
+  if (last < text.length) {
+    result += text.slice(last);
+  }
+  return result;
+}
+
+function buildReport(highlights) {
+  if (!highlights.length) return "<em>No issues detected 🎉</em>";
+  return `<h3 class="font-semibold mb-2">What was flagged:</h3><ul class="list-disc pl-5">
+    ${highlights.map(h => `<li><strong>${h.phrase}</strong> — ${h.comment}</li>`).join('')}
+  </ul>`;
+}
+
 form.onsubmit = async function (e) {
   e.preventDefault();
   errorBox.classList.add("hidden");
   resultBox.classList.add("hidden");
+  previewBox.classList.add("hidden");
+  reportBox.classList.add("hidden");
 
   const style = styleInput.value;
   const formData = new FormData();
 
+  // User uploaded a .docx
   if (fileInput.files.length > 0) {
     formData.append("file", fileInput.files[0]);
+    formData.append("style", style);
+
+    try {
+      const res = await fetch("https://typeslate-editor.onrender.com/highlight", {
+        method: "POST",
+        body: formData
+      });
+
+      if (!res.ok) throw new Error("Failed to process document");
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      downloadLink.href = url;
+      downloadLink.download = "highlighted.docx";
+      resultBox.classList.remove("hidden");
+    } catch (err) {
+      errorBox.textContent = err.message;
+      errorBox.classList.remove("hidden");
+    }
+
+  // User pasted text
   } else if (textInput.value.trim().length > 10) {
-    const blob = new Blob([textInput.value], { type: 'text/plain' });
-    formData.append("file", blob, "pasted.txt");
+    try {
+      const res = await fetch("https://typeslate-editor.onrender.com/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: textInput.value, style })
+      });
+
+      const data = await res.json();
+      previewBox.innerHTML = applyHighlights(data.text, data.highlights);
+      reportBox.innerHTML = buildReport(data.highlights);
+      previewBox.classList.remove("hidden");
+      reportBox.classList.remove("hidden");
+
+    } catch (err) {
+      errorBox.textContent = "Error analyzing pasted text.";
+      errorBox.classList.remove("hidden");
+    }
+
   } else {
     errorBox.textContent = "Please upload a file or paste at least 10 characters of text.";
-    errorBox.classList.remove("hidden");
-    return;
-  }
-
-  formData.append("style", style);
-
-  try {
-    const res = await fetch("https://typeslate-editor.onrender.com/highlight", {
-      method: "POST",
-      body: formData
-    });
-
-    if (!res.ok) throw new Error("Failed to process document");
-
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    downloadLink.href = url;
-    downloadLink.download = "highlighted.docx";
-    resultBox.classList.remove("hidden");
-  } catch (err) {
-    errorBox.textContent = err.message;
     errorBox.classList.remove("hidden");
   }
 };
 </script>
+
 
 </body>
 </html>
