@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TypeSlate Editor – Highlight & Fix Writing Issues</title>
+  <meta name="description" content="Upload or paste your writing to automatically highlight weak phrasing, passive voice, and vague language. Powered by TypeSlate's Editor tool.">
+  <meta name="author" content="Josh">
+
+  <link rel="icon" href="/images/favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="/images/favicon.png">
+  <link rel="shortcut icon" href="/images/favicon.png" type="image/png">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="TypeSlate Editor – Highlight & Fix Writing Issues">
+  <meta property="og:description" content="Paste or upload writing to detect issues instantly. Use smart style-based highlighting to improve clarity and flow.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://typeslate.com/editor/">
+  <meta property="og:image" content="https://typeslate.com/images/editor-preview.png">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TypeSlate Editor – Smart Writing Highlights">
+  <meta name="twitter:description" content="Highlight weak writing and improve your manuscript with the free TypeSlate Editor.">
+  <meta name="twitter:image" content="https://typeslate.com/images/editor-preview.png">
+
+  <!-- Schema.org JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "TypeSlate Editor",
+    "description": "Paste or upload writing to detect weak phrasing, vague language, and passive voice using TypeSlate Editor.",
+    "url": "https://typeslate.com/editor/",
+    "image": "https://typeslate.com/images/editor-preview.png",
+    "applicationCategory": "Writing",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "description": "The TypeSlate Editor is free to use online."
+    }
+  }
+  </script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-white text-gray-800 font-sans">
+
+<!-- Header (copied from your site) -->
+<header class="bg-white shadow-md">
+  <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+    <a href="/" class="text-2xl font-bold text-black no-underline">TypeSlate</a>
+    <nav class="hidden md:flex space-x-6 text-base">
+      <a href="/" class="hover:underline">Home</a>
+      <a href="/blog/" class="hover:underline">Blog</a>
+      <span class="font-semibold text-black">Editor</span>
+	  <a href="/pricing/" class="hover:underline">Pricing</a>
+      <a href="/about/" class="hover:underline">About</a>
+      <a href="https://apps.microsoft.com/detail/9PM3J9SQB0TV" target="_blank" class="bg-yellow-400 text-black px-4 py-1 rounded-full font-semibold hover:bg-yellow-300 transition">Download Free</a>
+    </nav>
+  </div>
+</header>
+
+<section class="py-12 px-4 max-w-3xl mx-auto">
+  <h1 class="text-3xl font-bold mb-4 text-center">TypeSlate Editor</h1>
+  <p class="text-center text-gray-600 mb-8">Paste or upload text to detect weak phrasing and writing issues. Supports DOCX, TXT, and Markdown.</p>
+
+  <form id="highlightForm" class="space-y-4">
+    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center bg-gray-50">
+      <label for="file" class="block mb-2 font-semibold">Upload a document</label>
+      <input type="file" id="file" name="file" accept=".docx,.txt,.md" class="mx-auto">
+      <p class="text-sm text-gray-500 mt-2">or paste your text below:</p>
+    </div>
+
+    <textarea id="textInput" name="text" rows="10" placeholder="Paste text here..." class="w-full p-3 border rounded-lg"></textarea>
+
+    <div>
+      <label for="style" class="block mb-1 font-semibold">Select style:</label>
+      <select id="style" name="style" class="border p-2 rounded w-full">
+        <option value="general">General</option>
+        <option value="fiction">Fiction</option>
+        <option value="professional">Professional</option>
+      </select>
+    </div>
+
+    <button type="submit" class="bg-black text-white px-6 py-2 rounded font-semibold hover:bg-gray-800">Highlight My Writing</button>
+  </form>
+
+  <div id="result" class="mt-6 hidden">
+    <h2 class="text-xl font-bold mb-2">✅ Download Ready</h2>
+    <a id="downloadLink" class="text-blue-600 underline">Download highlighted document</a>
+  </div>
+
+  <div id="error" class="text-red-600 mt-4 hidden font-semibold"></div>
+</section>
+
+<script>
+const form = document.getElementById('highlightForm');
+const fileInput = document.getElementById('file');
+const textInput = document.getElementById('textInput');
+const styleInput = document.getElementById('style');
+const resultBox = document.getElementById('result');
+const errorBox = document.getElementById('error');
+const downloadLink = document.getElementById('downloadLink');
+
+form.onsubmit = async function (e) {
+  e.preventDefault();
+  errorBox.classList.add("hidden");
+  resultBox.classList.add("hidden");
+
+  const style = styleInput.value;
+  const formData = new FormData();
+
+  if (fileInput.files.length > 0) {
+    formData.append("file", fileInput.files[0]);
+  } else if (textInput.value.trim().length > 10) {
+    const blob = new Blob([textInput.value], { type: 'text/plain' });
+    formData.append("file", blob, "pasted.txt");
+  } else {
+    errorBox.textContent = "Please upload a file or paste at least 10 characters of text.";
+    errorBox.classList.remove("hidden");
+    return;
+  }
+
+  formData.append("style", style);
+
+  try {
+    const res = await fetch("https://typeslate-editor.onrender.com/highlight", {
+      method: "POST",
+      body: formData
+    });
+
+    if (!res.ok) throw new Error("Failed to process document");
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    downloadLink.href = url;
+    downloadLink.download = "highlighted.docx";
+    resultBox.classList.remove("hidden");
+  } catch (err) {
+    errorBox.textContent = err.message;
+    errorBox.classList.remove("hidden");
+  }
+};
+</script>
+
+</body>
+</html>
